@@ -5,6 +5,7 @@ import { MENU_ITEMS, CATEGORIES } from './data';
 import { Play } from 'lucide-react';
 import { STORIES } from './data';
 import MpesaModal from './MpesaModal'; // Assuming it's in the same folder
+import { Toaster } from 'react-hot-toast';
 
 // --- CONFIGURATION ---
 const RESTAURANT_NAME = "Nexora Bistro";
@@ -357,7 +358,24 @@ const handlePaymentSuccess = (details) => {
     total={totalPrice}
     onPaymentSuccess={handlePaymentSuccess}
 />
+<Toaster 
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+              zIndex: 9999,
+            },
+            success: {
+              iconTheme: {
+                primary: '#A7002A', // Brand Rose color
+                secondary: 'white',
+              },
+            },
+          }}
+        />
     </div>
+
   );
 }
 

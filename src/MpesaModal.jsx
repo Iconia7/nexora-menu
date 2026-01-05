@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Smartphone, Loader, ShieldCheck, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess }) {
   const [phone, setPhone] = useState("");
@@ -9,7 +10,7 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
 
   const handlePay = async () => {
     if (phone.length < 10) {
-      alert("Please enter a valid phone number");
+      toast.error("Please enter a valid phone number (e.g., 0712345678)");
       return;
     }
     setLoading(true);
@@ -25,7 +26,7 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
         setStep("processing");
         checkStatus(data.CheckoutRequestID);
       } else {
-        alert("STK Failed: " + (data.errorMessage || "Error"));
+        toast.error("STK Push Failed: " + (data.errorMessage || "Unknown Error"));
         setLoading(false);
       }
     } catch (err) {
@@ -55,7 +56,7 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
                 }, 2000);
             } else if (['1032', '1', '1037'].includes(data.ResultCode)) {
                 clearInterval(interval);
-                alert("Payment Failed: " + data.ResultDesc);
+               toast.error(`Payment Failed: ${data.ResultDesc}`);
                 setStep("input");
                 setLoading(false);
             }
@@ -63,7 +64,7 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
 
         if (attempts >= 20) {
             clearInterval(interval);
-            alert("Timeout. Please check SMS.");
+            toast.error("Timeout. Did you enter your PIN?");
             setLoading(false);
             onClose();
         }

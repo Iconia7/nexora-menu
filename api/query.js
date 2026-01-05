@@ -5,6 +5,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send({ message: 'Only POST allowed' });
 
   const { checkoutRequestID } = req.body;
+
+  // --- CREDENTIALS ---
+  // Ensure these match your api/stkpush.js exactly
   const consumerKey = "4I0cuGBM1KngCMP6zWAavhWOLI2LMatWA6axE2mp5cyoUKd9"; 
   const consumerSecret = "xDAdv3KxtWiKHwm7UsGkB3OL0Xlv0A0jAOr07XNDHsMZkdKOIc0owkh2Gi5SodBL";
   const businessShortCode = "174379";
@@ -31,12 +34,16 @@ export default async function handler(req, res) {
       },
       { 
         headers: { Authorization: `Bearer ${accessToken}` },
-        validateStatus: false // Prevent crashing on 404/500 from Safaricom
+        // 👇 THIS IS THE FIX 👇
+        validateStatus: false 
       }
     );
 
+    // Send the raw answer back to frontend (even if it's 403 or 500)
     res.status(200).json(queryResponse.data);
+
   } catch (error) {
+    console.error("Query Error:", error.message);
     res.status(200).json({ ResultCode: "ERR", ResultDesc: error.message });
   }
 }
