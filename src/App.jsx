@@ -8,7 +8,7 @@ import MpesaModal from './MpesaModal'; // Assuming it's in the same folder
 
 // --- CONFIGURATION ---
 const RESTAURANT_NAME = "Nexora Bistro";
-const WHATSAPP_NUMBER = "254700000000"; 
+const WHATSAPP_NUMBER = "254115332870"; 
 const HERO_IMAGE = "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop"; // Atmospheric background
 
 function App() {
