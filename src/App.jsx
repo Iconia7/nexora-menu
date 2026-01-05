@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MENU_ITEMS, CATEGORIES } from './data';
 import { Play } from 'lucide-react';
 import { STORIES } from './data';
+import MpesaModal from './MpesaModal'; // Assuming it's in the same folder
 
 // --- CONFIGURATION ---
 const RESTAURANT_NAME = "Nexora Bistro";
@@ -16,6 +17,7 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeStory, setActiveStory] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Handle Scroll Effect for Header
   useEffect(() => {
@@ -55,15 +57,23 @@ function App() {
     });
   };
 
-  const handleCheckout = () => {
-    if (cart.length === 0) return;
-    let message = `👋 *New Order for ${RESTAURANT_NAME}*\n\n`;
-    cart.forEach(item => message += `▫️ ${item.qty}x ${item.name} @ ${item.price}\n`);
-    message += `\n💰 *TOTAL: KES ${totalPrice.toLocaleString()}*`;
-    message += `\n\n📍 *My Location:* [Please share location]`;
-    message += `\n💳 *Payment:* M-Pesa / Cash`;
+const handlePaymentSuccess = (details) => {
+    // 1. Build the Receipt Message
+    let message = `🧾 *PAID ORDER - ${RESTAURANT_NAME}*\n`;
+    message += `✅ *M-Pesa Ref:* ${details.receipt}\n`;
+    message += `📱 *Customer:* ${details.phone}\n\n`;
+    message += `*ORDER DETAILS:*\n`;
+    cart.forEach(item => message += `▫️ ${item.qty}x ${item.name}\n`);
+    message += `\n💰 *TOTAL PAID: KES ${totalPrice.toLocaleString()}*`;
+
+    // 2. Send to Waiter/Kitchen via WhatsApp
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
-  };
+
+    // 3. Clear Cart
+    setCart([]);
+    setIsCartOpen(false);
+    setIsPaymentModalOpen(false);
+};
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-stone-900 pb-24 selection:bg-orange-500 selection:text-white">
@@ -277,14 +287,15 @@ function App() {
                             <span>Total</span>
                             <span>Ksh {totalPrice.toLocaleString()}</span>
                         </div>
-                        <button 
-                            onClick={handleCheckout}
-                            disabled={cart.length === 0}
-                            className="w-full bg-stone-900 text-white py-4 rounded-2xl font-bold text-lg shadow-xl hover:bg-orange-600 hover:shadow-orange-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-3 group"
-                        >
-                            <span>Checkout on WhatsApp</span>
-                            <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
+                        {/* Change onClick to setIsPaymentModalOpen(true) */}
+<button 
+    onClick={() => setIsPaymentModalOpen(true)} // <--- UPDATED
+    disabled={cart.length === 0}
+    className="w-full bg-stone-900 text-white py-4 rounded-2xl font-bold text-lg shadow-xl hover:bg-orange-600 transition-all disabled:opacity-50 flex justify-center items-center gap-3"
+>
+    <span>Pay with M-Pesa</span>
+    <ChevronRight size={20} />
+</button>
                     </div>
                 </motion.div>
             </>
@@ -316,7 +327,6 @@ function App() {
   loop 
   muted 
   playsInline
-  controls // <--- Added controls so you can see if the file loaded
   className="w-full h-full object-cover bg-black" // Added bg-black to see boundaries
   onError={(e) => console.error("Video Error:", e)} // Logs error to console (F12) if link is broken
 />
@@ -340,6 +350,13 @@ function App() {
     </motion.div>
   )}
 </AnimatePresence>
+{/* ... inside return ... */}
+<MpesaModal 
+    isOpen={isPaymentModalOpen}
+    onClose={() => setIsPaymentModalOpen(false)}
+    total={totalPrice}
+    onPaymentSuccess={handlePaymentSuccess}
+/>
     </div>
   );
 }
