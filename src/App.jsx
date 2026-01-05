@@ -357,6 +357,8 @@ const handlePaymentSuccess = (details) => {
     onClose={() => setIsPaymentModalOpen(false)}
     total={totalPrice}
     onPaymentSuccess={handlePaymentSuccess}
+    cart={cart}
+    removeFromCart={removeFromCart}
 />
 <Toaster 
           position="top-center"
