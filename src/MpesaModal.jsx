@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { X, Smartphone, Loader, ShieldCheck, CheckCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess }) {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("input"); // 'input' | 'processing' | 'success'
+  const [receipt, setReceipt] = useState(""); // Store the Safaricom Receipt
 
   const handlePay = async () => {
     if (phone.length < 10) {
-      toast.error("Please enter a valid phone number (e.g., 0712345678)");
+      toast.error("Please enter a valid phone number");
       return;
     }
     setLoading(true);
+    
     try {
       const res = await fetch('/api/stkpush', {
         method: 'POST',
@@ -31,11 +33,12 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
       }
     } catch (err) {
       console.error(err);
+      toast.error("Connection Error");
       setLoading(false);
     }
   };
 
-const checkStatus = async (checkoutID) => {
+  const checkStatus = async (checkoutID) => {
     let attempts = 0;
     const interval = setInterval(async () => {
         attempts++;
@@ -47,42 +50,37 @@ const checkStatus = async (checkoutID) => {
             });
             const data = await res.json();
             
-            console.log("Status Check:", data); // Open Console (F12) to see this
+            console.log("Status:", data); // Debugging
 
             if (data.ResultCode === "0") {
                 clearInterval(interval);
-                setStep("success");
-                setTimeout(() => {
-                    onPaymentSuccess({ receipt: data.CheckoutRequestID, phone });
-                    onClose();
-                }, 2000);
+                // 1. SAVE RECEIPT
+                setReceipt(data.CheckoutRequestID); 
+                // 2. SHOW SUCCESS BUTTON (Don't auto-redirect)
+                setStep("success"); 
+                setLoading(false);
             } 
-            // Handle User Cancelled / Insufficient Funds
-            else if (['1032', '1', '1037', '2001'].includes(data.ResultCode)) {
+            else if (['1032', '1', '1037'].includes(data.ResultCode)) {
                 clearInterval(interval);
                 toast.error(`Payment Failed: ${data.ResultDesc}`);
                 setStep("input");
                 setLoading(false);
             }
-            // Handle System Errors (Like the 403 you were seeing)
-            else if (data.ResultCode === "ERR") {
-                console.warn("Backend Error (Retrying...):", data.ResultDesc);
-                // We DO NOT stop the interval. We keep retrying.
-            }
-            // Handle "Pending" (Safaricom hasn't processed it yet)
-            else {
-                // Keep waiting...
-            }
-        } catch (error) { console.log("Polling Error..."); }
+        } catch (error) { console.log("Polling..."); }
 
-        // Stop after 60 seconds (20 attempts * 3s)
         if (attempts >= 20) {
             clearInterval(interval);
-            toast.error("Timeout. If you entered your PIN, you will receive an SMS.");
+            toast.error("Timeout. If you entered PIN, please wait for SMS.");
             setLoading(false);
             onClose();
         }
     }, 3000);
+  };
+
+  // --- MANUAL TRIGGER TO BYPASS POPUP BLOCKER ---
+  const handleFinalize = () => {
+      onPaymentSuccess({ receipt: receipt, phone: phone });
+      onClose();
   };
 
   if (!isOpen) return null;
@@ -127,10 +125,21 @@ const checkStatus = async (checkoutID) => {
                 </div>
             )}
 
+            {/* --- THIS IS THE NEW PART --- */}
             {step === "success" && (
                 <div className="text-center py-6">
-                    <CheckCircle size={56} className="text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-stone-800">Payment Successful!</h3>
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                        <CheckCircle size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold text-stone-800 mb-2">Payment Confirmed!</h3>
+                    <p className="text-sm text-stone-500 mb-6">Your transaction was successful.</p>
+                    
+                    <button 
+                        onClick={handleFinalize} 
+                        className="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-green-700 transition animate-pulse"
+                    >
+                        Send Order to Kitchen 👉
+                    </button>
                 </div>
             )}
         </div>
