@@ -35,7 +35,7 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
     }
   };
 
-  const checkStatus = async (checkoutID) => {
+const checkStatus = async (checkoutID) => {
     let attempts = 0;
     const interval = setInterval(async () => {
         attempts++;
@@ -46,6 +46,8 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
                 body: JSON.stringify({ checkoutRequestID: checkoutID })
             });
             const data = await res.json();
+            
+            console.log("Status Check:", data); // Open Console (F12) to see this
 
             if (data.ResultCode === "0") {
                 clearInterval(interval);
@@ -54,17 +56,29 @@ export default function MpesaModal({ isOpen, onClose, total, onPaymentSuccess })
                     onPaymentSuccess({ receipt: data.CheckoutRequestID, phone });
                     onClose();
                 }, 2000);
-            } else if (['1032', '1', '1037'].includes(data.ResultCode)) {
+            } 
+            // Handle User Cancelled / Insufficient Funds
+            else if (['1032', '1', '1037', '2001'].includes(data.ResultCode)) {
                 clearInterval(interval);
-               toast.error(`Payment Failed: ${data.ResultDesc}`);
+                toast.error(`Payment Failed: ${data.ResultDesc}`);
                 setStep("input");
                 setLoading(false);
             }
-        } catch (error) { console.log("Polling..."); }
+            // Handle System Errors (Like the 403 you were seeing)
+            else if (data.ResultCode === "ERR") {
+                console.warn("Backend Error (Retrying...):", data.ResultDesc);
+                // We DO NOT stop the interval. We keep retrying.
+            }
+            // Handle "Pending" (Safaricom hasn't processed it yet)
+            else {
+                // Keep waiting...
+            }
+        } catch (error) { console.log("Polling Error..."); }
 
+        // Stop after 60 seconds (20 attempts * 3s)
         if (attempts >= 20) {
             clearInterval(interval);
-            toast.error("Timeout. Did you enter your PIN?");
+            toast.error("Timeout. If you entered your PIN, you will receive an SMS.");
             setLoading(false);
             onClose();
         }
