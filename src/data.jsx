@@ -28,7 +28,7 @@ export const MENU_ITEMS = [
     name: "Loaded Fries",
     price: 400,
     category: "Sides",
-    image: "https://images.unsplash.com/photo-1630384060421-a43231273320?auto=format&fit=crop&w=500&q=60",
+    image: "https://images.unsplash.com/photo-1662541352073-59531b298a47?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     description: "Fries topped with melted cheese and bacon bits."
   },
   {
