@@ -6,13 +6,15 @@ import { Play } from 'lucide-react';
 import { STORIES } from './data';
 import MpesaModal from './MpesaModal'; // Assuming it's in the same folder
 import { Toaster } from 'react-hot-toast';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import OwnerDashboard from './AdminDashboard';
 
 // --- CONFIGURATION ---
 const RESTAURANT_NAME = "Nexora Bistro";
 const WHATSAPP_NUMBER = "254115332870"; 
 const HERO_IMAGE = "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop"; // Atmospheric background
 
-function App() {
+function Home() {
   const [cart, setCart] = useState([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -378,6 +380,20 @@ const handlePaymentSuccess = (details) => {
         />
     </div>
 
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* The public menu */}
+        <Route path="/" element={<Home />} />
+        
+        {/* The hidden owner dashboard */}
+        <Route path="/nexora-admin" element={<OwnerDashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
