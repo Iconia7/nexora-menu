@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebase'; // Ensure your firebase config is exported from a file
+import { db } from './firebase'; 
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { TrendingUp, ShoppingBasket, DollarSign, Calendar } from 'lucide-react';
 
@@ -9,14 +9,46 @@ export default function OwnerDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
 
+  // 1. HOOKS ALWAYS GO AT THE TOP
+  useEffect(() => {
+    // Only run the database listener if the user is logged in
+    if (!isAuthenticated) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const q = query(
+      collection(db, "menu_orders"),
+      where("dateStr", "==", today),
+      where("status", "==", "PAID")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let dailyTotal = 0;
+      snapshot.forEach((doc) => {
+        dailyTotal += Number(doc.data().amount);
+      });
+      
+      setStats({
+        total: dailyTotal,
+        count: snapshot.size
+      });
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore Error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [isAuthenticated]); // Re-run if login status changes
+
   const handleLogin = () => {
-    if (password === "Bistro2026") { // Set your own password here
+    if (password === "Bistro2026") {
       setIsAuthenticated(true);
     } else {
       alert("Wrong password!");
     }
   };
 
+  // 2. CONDITIONAL RETURNS GO AFTER HOOKS
   if (!isAuthenticated) {
     return (
       <div className="h-screen flex items-center justify-center bg-stone-900 p-6">
@@ -38,30 +70,6 @@ export default function OwnerDashboard() {
       </div>
     );
   }
-
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const q = query(
-      collection(db, "menu_orders"),
-      where("dateStr", "==", today),
-      where("status", "==", "PAID")
-    );
-
-    // Real-time listener: The dashboard updates automatically as orders come in!
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      let dailyTotal = 0;
-      snapshot.forEach((doc) => {
-        dailyTotal += Number(doc.data().amount);
-      });
-      setStats({
-        total: dailyTotal,
-        count: snapshot.size
-      });
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   return (
     <div className="p-6 bg-stone-50 min-h-screen">
